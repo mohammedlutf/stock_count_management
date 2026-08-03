@@ -1,0 +1,75 @@
+<div class="p-2">
+    <!-- Active In-Progress Session Dropdown -->
+    <div class="card p-3 mb-3 shadow-sm">
+        <h5 class="text-primary font-weight-bold mb-2">Target Inventory Session</h5>
+        <div class="form-group mb-2">
+            <label class="small text-muted font-weight-bold">Active Session</label>
+            <select id="target-session-select" class="form-control form-control-lg">
+                <option value="">-- Select In-Progress Session --</option>
+            </select>
+        </div>
+        <div class="form-group mb-0">
+            <label class="small text-muted font-weight-bold">Target Warehouse</label>
+            <input type="text" id="target-warehouse-display" class="form-control bg-light" readonly placeholder="Auto-filled from Session">
+        </div>
+    </div>
+
+    <!-- Multi-Search Input (Barcode / Code / Name) -->
+    <div class="card p-3 mb-3 shadow-sm">
+        <div class="input-group input-group-lg mb-2">
+            <input type="text" id="barcode-input" class="form-control" placeholder="Scan Barcode / Search Code or Name..." autofocus autocomplete="off">
+            <div class="input-group-append">
+                <button class="btn btn-primary" id="btn-fetch-item">Search</button>
+            </div>
+        </div>
+        <button id="btn-camera-toggle" class="btn btn-outline-info btn-block font-weight-bold">
+            📷 Open Camera Scanner
+        </button>
+
+        <div id="camera-box" class="mt-2 text-center d-none">
+            <div id="camera-render" style="width: 100%; max-width: 450px; margin: 0 auto; border: 2px dashed #17a2b8; border-radius: 6px;"></div>
+            <button id="btn-stop-camera" class="btn btn-sm btn-danger mt-2">Close Camera</button>
+        </div>
+    </div>
+
+    <!-- Scanned Item Card -->
+    <div id="scanned-item-card" class="card p-3 shadow-sm d-none">
+        <h4 id="disp-item-name" class="font-weight-bold text-dark mb-1"></h4>
+        <p id="disp-item-code" class="text-muted small mb-2"></p>
+
+        <div id="disp-system-qty" class="alert alert-info py-1 px-2 mb-2 d-none"></div>
+
+        <div class="alert alert-success py-1 px-2 mb-3">
+            Current Total Counted: <strong id="disp-accumulated-qty">0</strong> <span id="disp-stock-uom"></span>
+        </div>
+
+        <hr class="my-2">
+
+        <!-- Dynamic Batch Tracking Input -->
+        <div id="batch-section" class="form-group d-none">
+            <label class="font-weight-bold text-warning">Batch Number</label>
+            <select id="batch-select" class="form-control form-control-lg"></select>
+            <input type="text" id="batch-manual-input" class="form-control mt-1 d-none" placeholder="Enter Batch Number Manually">
+        </div>
+
+        <!-- Dynamic Serial Tracking Input -->
+        <div id="serial-section" class="form-group d-none">
+            <label class="font-weight-bold text-danger">Serial Numbers (Scan/Enter one per line or comma-separated)</label>
+            <textarea id="serial-input" class="form-control" rows="3" placeholder="e.g. SN-001, SN-002"></textarea>
+        </div>
+
+        <div class="form-group" id="qty-section">
+            <label class="font-weight-bold">Quantity Scanned Now</label>
+            <input type="number" step="any" id="input-scan-qty" class="form-control form-control-lg text-center font-weight-bold" value="1.0">
+        </div>
+
+        <div class="form-group">
+            <label class="font-weight-bold">Selected UOM</label>
+            <select id="uom-select" class="form-control form-control-lg"></select>
+        </div>
+
+        <button id="btn-save-count-entry" class="btn btn-success btn-lg btn-block font-weight-bold mt-3">
+            ADD TO COUNT & SCAN NEXT
+        </button>
+    </div>
+</div>

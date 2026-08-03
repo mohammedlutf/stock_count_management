@@ -1,0 +1,157 @@
+{
+ "actions": [],
+ "creation": "2026-08-03 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "session",
+  "item_code",
+  "item_name",
+  "warehouse",
+  "stock_uom",
+  "selected_counting_uom",
+  "conversion_factor",
+  "column_break_qty",
+  "current_erp_qty",
+  "counted_quantity",
+  "qty_in_stock_uom",
+  "difference_quantity",
+  "batch_serial_section",
+  "batch_no",
+  "serial_no",
+  "status_section",
+  "status",
+  "counter"
+ ],
+ "fields": [
+  {
+   "fieldname": "session",
+   "fieldtype": "Link",
+   "label": "Session",
+   "options": "Stock Count Session",
+   "reqd": 1
+  },
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Item Code",
+   "options": "Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Item Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
+   "options": "Warehouse",
+   "reqd": 1
+  },
+  {
+   "fieldname": "stock_uom",
+   "fieldtype": "Link",
+   "label": "Stock UOM",
+   "options": "UOM"
+  },
+  {
+   "fieldname": "selected_counting_uom",
+   "fieldtype": "Link",
+   "label": "Selected Counting UOM",
+   "options": "UOM"
+  },
+  {
+   "default": "1.0",
+   "fieldname": "conversion_factor",
+   "fieldtype": "Float",
+   "label": "Conversion Factor"
+  },
+  {
+   "fieldname": "column_break_qty",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "current_erp_qty",
+   "fieldtype": "Float",
+   "label": "Current ERP Qty",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "counted_quantity",
+   "fieldtype": "Float",
+   "label": "Counted Quantity (Selected UOM)"
+  },
+  {
+   "default": "0",
+   "fieldname": "qty_in_stock_uom",
+   "fieldtype": "Float",
+   "label": "Total Counted (Stock UOM)",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "difference_quantity",
+   "fieldtype": "Float",
+   "label": "Variance Qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "batch_serial_section",
+   "fieldtype": "Section Break",
+   "label": "Batch & Serial Tracking"
+  },
+  {
+   "fieldname": "batch_no",
+   "fieldtype": "Link",
+   "label": "Batch No",
+   "options": "Batch"
+  },
+  {
+   "fieldname": "serial_no",
+   "fieldtype": "Small Text",
+   "label": "Serial Numbers",
+   "description": "Enter serial numbers separated by newlines or commas"
+  },
+  {
+   "fieldname": "status_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Pending\nCounted\nVerified"
+  },
+  {
+   "fieldname": "counter",
+   "fieldtype": "Link",
+   "label": "Counter User",
+   "options": "User"
+  }
+ ],
+ "modified": "2026-08-02 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Stock Count Management",
+ "name": "Count Entry",
+ "naming_rule": "Random",
+ "autoname": "hash",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

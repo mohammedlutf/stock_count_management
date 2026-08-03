@@ -1,0 +1,49 @@
+{
+ "actions": [],
+ "creation": "2026-08-03 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "session_name",
+  "company",
+  "warehouse",
+  "count_type",
+  "status",
+  "column_break_stats",
+  "total_items",
+  "counted_items",
+  "uncounted_items",
+  "completion_percent"
+ ],
+ "fields": [
+  { "fieldname": "session_name", "fieldtype": "Data", "label": "Session Name", "reqd": 1 },
+  { "fieldname": "company", "fieldtype": "Link", "label": "Company", "options": "Company", "reqd": 1 },
+  { "fieldname": "warehouse", "fieldtype": "Link", "label": "Target Warehouse", "options": "Warehouse", "reqd": 1 },
+  { "default": "Full Count", "fieldname": "count_type", "fieldtype": "Select", "label": "Count Type", "options": "Full Count\nCycle Count\nBlind Count" },
+  
+    {"fieldname": "item_group", "fieldtype": "Link", "label": "Item Group", "options": "Item Group" },
+    {"fieldname": "brand", "fieldtype": "Link", "label": "Brand", "options": "Brand"},
+  
+  { "default": "Draft", "fieldname": "status", "fieldtype": "Select", "label": "Status", "options": "Draft\nIn Progress\nCompleted\nCancelled", "read_only": 1 },
+  { "fieldname": "column_break_stats", "fieldtype": "Column Break" },
+  { "default": "0", "fieldname": "total_items", "fieldtype": "Int", "label": "Total Items", "read_only": 1 },
+  { "default": "0", "fieldname": "counted_items", "fieldtype": "Int", "label": "Counted Items", "read_only": 1 },
+  { "default": "0", "fieldname": "uncounted_items", "fieldtype": "Int", "label": "Uncounted Items", "read_only": 1 },
+  { "default": "0", "fieldname": "completion_percent", "fieldtype": "Percent", "label": "Completion %", "read_only": 1 }
+ ],
+ "is_submittable": 0,
+ "links": [],
+ "modified": "2026-08-01 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Stock Count Management",
+ "name": "Stock Count Session",
+ "naming_rule": "Expression",
+ "autoname": "SCS-.YYYY.-.#####",
+ "owner": "Administrator",
+ "permissions": [
+  { "create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "System Manager", "share": 1, "write": 1 }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

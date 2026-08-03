@@ -1,0 +1,15 @@
+{
+ "content": null,
+ "creation": "2026-08-01 10:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Page",
+ "icon": "octicon octicon-device-camera",
+ "idx": 0,
+ "modified": "2026-08-01 10:00:00.000000",
+ "module": "Stock Count Management",
+ "name": "mobile-scanner",
+ "page_name": "mobile-scanner",
+ "roles": [],
+ "standard": "Yes",
+ "title": "Mobile Stock Counter"
+}

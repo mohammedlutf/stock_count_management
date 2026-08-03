@@ -1,0 +1,28 @@
+{
+ "actions": [],
+ "creation": "2026-08-03 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "count_entry",
+  "item_code",
+  "warehouse",
+  "difference",
+  "reason",
+  "notes"
+ ],
+ "fields": [
+  { "fieldname": "count_entry", "fieldtype": "Link", "label": "Count Entry", "options": "Count Entry", "reqd": 1 },
+  { "fieldname": "item_code", "fieldtype": "Link", "label": "Item Code", "options": "Item", "read_only": 1 },
+  { "fieldname": "warehouse", "fieldtype": "Link", "label": "Warehouse", "options": "Warehouse", "read_only": 1 },
+  { "default": "0", "fieldname": "difference", "fieldtype": "Float", "label": "Variance Qty", "read_only": 1 },
+  { "default": "Unknown", "fieldname": "reason", "fieldtype": "Select", "label": "Reason", "options": "Damage\nExpired\nLost\nStolen\nSupplier Error\nWrong UOM\nUnknown" },
+  { "fieldname": "notes", "fieldtype": "Small Text", "label": "Notes" }
+ ],
+ "modified": "2026-08-01 10:00:00.000000",
+ "module": "Stock Count Management",
+ "name": "Variance Investigation",
+ "permissions": [
+  { "create": 1, "delete": 1, "read": 1, "role": "System Manager", "write": 1 }
+ ]
+}
