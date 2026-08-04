@@ -1,7 +1,7 @@
 frappe.pages['mobile-scanner'].on_page_load = function(wrapper) {
     var page = frappe.ui.make_app_page({
         parent: wrapper,
-        title: 'Mobile Stock Counter',
+        title: __('Mobile Stock Counter'),
         single_column: true
     });
 
@@ -10,7 +10,7 @@ frappe.pages['mobile-scanner'].on_page_load = function(wrapper) {
         script.src = "https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js";
         document.head.appendChild(script);
     }
-
+    
     $(wrapper).find('.layout-main-section').html(frappe.render_template('mobile_scanner', {}));
 
     let current_item = null;
@@ -26,7 +26,7 @@ frappe.pages['mobile-scanner'].on_page_load = function(wrapper) {
             callback: function(r) {
                 if (r.message) {
                     let select = $('#target-session-select').empty();
-                    select.append(new Option('-- Select In-Progress Session --', ''));
+                    select.append(new Option(__('-- Select In-Progress Session --'), ''));
                     
                     r.message.forEach(s => {
                         sessions_map[s.name] = s.warehouse;
@@ -114,12 +114,12 @@ frappe.pages['mobile-scanner'].on_page_load = function(wrapper) {
 
     function renderItemDetails(item) {
         $('#disp-item-name').text(item.item_name);
-        $('#disp-item-code').text(`Code: ${item.item_code} | Primary UOM: ${item.stock_uom}`);
+        $('#disp-item-code').text(`${__("Code")} : ${item.item_code} | ${__("Primary UOM")}: ${item.stock_uom}`);
         $('#disp-accumulated-qty').text(item.accumulated_stock_qty);
         $('#disp-stock-uom').text(item.stock_uom);
 
         if (item.current_erp_qty !== null) {
-            $('#disp-system-qty').text(`System Expected Balance: ${item.current_erp_qty}`).removeClass('d-none');
+            $('#disp-system-qty').text(` ${__("System Expected Balance")}: ${item.current_erp_qty}`).removeClass('d-none');
         } else {
             $('#disp-system-qty').addClass('d-none');
         }
@@ -134,11 +134,11 @@ frappe.pages['mobile-scanner'].on_page_load = function(wrapper) {
         if (item.has_batch) {
             $('#batch-section').removeClass('d-none');
             let batch_sel = $('#batch-select').empty();
-            batch_sel.append(new Option('-- Select Existing Batch --', ''));
+            batch_sel.append(new Option(__('-- Select Existing Batch --'), ''));
             item.available_batches.forEach(b => {
                 batch_sel.append(new Option(b, b, false, b === item.existing_batch));
             });
-            batch_sel.append(new Option('+ Enter New Batch', 'NEW'));
+            batch_sel.append(new Option(__('+ Enter New Batch'), 'NEW'));
         } else {
             $('#batch-section').addClass('d-none');
         }
@@ -192,7 +192,7 @@ frappe.pages['mobile-scanner'].on_page_load = function(wrapper) {
             callback: function(r) {
                 if (r.message && r.message.status === 'success') {
                     frappe.show_alert({
-                        message: __('Scanned Qty Added! Total: ') + r.message.new_total_stock_qty + ' ' + r.message.stock_uom,
+                        message: __("Scanned Qty Added! Total: ") + r.message.new_total_stock_qty + ' ' + r.message.stock_uom,
                         indicator: 'green'
                     });
                     resetUI();

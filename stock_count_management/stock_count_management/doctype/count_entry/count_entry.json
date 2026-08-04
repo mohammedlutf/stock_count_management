@@ -29,6 +29,7 @@
    "fieldtype": "Link",
    "label": "Session",
    "options": "Stock Count Session",
+   "in_list_view": 1,
    "reqd": 1
   },
   {
@@ -36,6 +37,7 @@
    "fieldtype": "Link",
    "label": "Item Code",
    "options": "Item",
+   "in_list_view": 1,
    "reqd": 1
   },
   {
@@ -126,6 +128,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
+   "in_list_view": 1,
    "options": "Pending\nCounted\nVerified"
   },
   {
