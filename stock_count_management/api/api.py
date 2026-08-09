@@ -1,6 +1,6 @@
 import frappe
 from frappe import _
-from frappe.utils import flt
+from frappe.utils import flt,getdate, today
 
 @frappe.whitelist()
 def get_active_sessions():
@@ -85,56 +85,119 @@ def scan_and_fetch_item(search_query, warehouse, session):
 
 
 @frappe.whitelist()
-def submit_count_payload(session, warehouse, item_code, selected_uom, conversion_factor, counted_quantity, batch_no=None, serial_no=None):
-    item = frappe.get_doc("Item", item_code)
+def submit_count_payload(session, warehouse, item_code, selected_uom, conversion_factor=1.0, counted_quantity=0, batch_no=None, serial_no=None):
+    """ Routes mobile scan payloads directly through record_counter_scan on Stock Count Session """
+    if not session or not item_code:
+        frappe.throw(_("Session ID and Item Code are required."))
 
-    # Process Serial Numbers
-    serials_list = []
-    if item.has_serial_no and serial_no:
-        serials_list = [s.strip() for s in serial_no.replace('\n', ',').split(',') if s.strip()]
-        counted_quantity = len(serials_list)
-
-    added_qty_in_stock_uom = flt(counted_quantity) * flt(conversion_factor)
-    entry_name = frappe.db.get_value("Count Entry", {"session": session, "item_code": item_code, "warehouse": warehouse})
-
-    # Clear batch input if item does NOT have batch tracking
-    clean_batch_no = batch_no if item.has_batch_no else None
-
-    if entry_name:
-        entry = frappe.get_doc("Count Entry", entry_name)
-        entry.qty_in_stock_uom = flt(entry.qty_in_stock_uom) + added_qty_in_stock_uom
-        
-        if serials_list:
-            existing_serials = [s.strip() for s in (entry.serial_no or "").split('\n') if s.strip()]
-            combined_serials = list(set(existing_serials + serials_list))
-            entry.serial_no = "\n".join(combined_serials)
-            entry.qty_in_stock_uom = len(combined_serials)
-            
-        if clean_batch_no:
-            entry.batch_no = clean_batch_no
-    else:
-        entry = frappe.new_doc("Count Entry")
-        entry.session = session
-        entry.warehouse = warehouse
-        entry.item_code = item_code
-        entry.item_name = item.item_name
-        entry.stock_uom = item.stock_uom
-        entry.current_erp_qty = frappe.db.get_value("Bin", {"item_code": item_code, "warehouse": warehouse}, "actual_qty") or 0.0
-        entry.qty_in_stock_uom = added_qty_in_stock_uom
-        entry.batch_no = clean_batch_no
-        if serials_list:
-            entry.serial_no = "\n".join(serials_list)
-
-    entry.counter = frappe.session.user
-    entry.status = "Counted"  # Crucial for filtering during Reconciliation
-    entry.save(ignore_permissions=True)
-
-    # Recalculate session progress stats
+    # Load session document
     session_doc = frappe.get_doc("Stock Count Session", session)
-    session_doc.recalculate_statistics()
+
+    # Route scan payload to session instance method
+    res = session_doc.record_counter_scan(
+        item_code=item_code,
+        qty=flt(counted_quantity),
+        conversion_factor=flt(conversion_factor or 1.0),
+        batch_no=batch_no,
+        serial_no=serial_no
+    )
+
+    stock_uom = frappe.db.get_value("Item", item_code, "stock_uom")
 
     return {
         "status": "success",
-        "new_total_stock_qty": entry.qty_in_stock_uom,
-        "stock_uom": entry.stock_uom
+        "new_total_stock_qty": res.get("total_qty"),
+        "stock_uom": stock_uom
     }
+
+@frappe.whitelist()
+def search_items(query, warehouse=None):
+    """
+    Wildcard substring search matching item_code, item_name, or barcode 
+    anywhere in the text (%query%). Returns item details and UOM conversions.
+    """
+    if not query or len(query.strip()) < 2:
+        return []
+
+    search_term = f"%{query.strip()}%"
+
+    sql_query = """
+        SELECT DISTINCT
+            item.name AS item_code,
+            item.item_name,
+            item.stock_uom,
+            item.has_batch_no,
+            item.has_serial_no,
+            bc.barcode
+        FROM `tabItem` item
+        LEFT JOIN `tabItem Barcode` bc ON bc.parent = item.name
+        WHERE item.disabled = 0
+          AND (
+              item.name LIKE %s 
+              OR item.item_name LIKE %s 
+              OR bc.barcode LIKE %s
+          )
+        ORDER BY 
+            CASE 
+                WHEN item.name LIKE %s THEN 1
+                WHEN item.item_name LIKE %s THEN 2
+                ELSE 3
+            END
+        LIMIT 15
+    """
+
+    exact_start = f"{query.strip()}%"
+    results = frappe.db.sql(
+        sql_query, 
+        (search_term, search_term, search_term, exact_start, exact_start), 
+        as_dict=True
+    )
+
+    # Attach UOM conversion factors for each matching item
+    for item in results:
+        uoms = frappe.db.get_all(
+            "UOM Conversion Detail",
+            filters={"parent": item.item_code},
+            fields=["uom", "conversion_factor"]
+        )
+        
+        # Ensure base stock_uom is present in list with factor 1.0
+        uom_list = [{"uom": item.stock_uom, "conversion_factor": 1.0}]
+        for u in uoms:
+            if u.uom != item.stock_uom:
+                uom_list.append({"uom": u.uom, "conversion_factor": flt(u.conversion_factor)})
+
+        item["uoms"] = uom_list
+
+    return results
+
+
+@frappe.whitelist()
+def validate_batch_expiry(batch_no, item_code=None):
+    """
+    Checks if a scanned batch number is expired and returns its details.
+    """
+    if not batch_no:
+        return {"is_expired": False}
+
+    batch = frappe.db.get_value(
+        "Batch", 
+        batch_no, 
+        ["name", "expiry_date", "disabled"], 
+        as_dict=True
+    )
+
+    if not batch:
+        return {"exists": False, "is_expired": False, "message": _("Batch number does not exist.")}
+
+    is_expired = False
+    if batch.expiry_date and getdate(batch.expiry_date) < getdate(today()):
+         is_expired = True
+
+    return {
+        "exists": True,
+        "is_expired": is_expired,
+        "expiry_date": str(batch.expiry_date) if batch.expiry_date else None,
+        "disabled": batch.disabled,
+        "message": _("Warning: Batch {0} expired on {1}!").format(batch_no, batch.expiry_date) if is_expired else _("Batch Valid")
+    }    

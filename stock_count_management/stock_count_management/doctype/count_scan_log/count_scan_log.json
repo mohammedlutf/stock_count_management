@@ -1,0 +1,58 @@
+{
+ "actions": [],
+ "autoiname": "hash",
+ "creation": "2026-08-04 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "counter",
+  "qty",
+  "batch_no",
+  "serial_no",
+  "scan_timestamp"
+ ],
+ "fields": [
+  {
+   "fieldname": "counter",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Counter User",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Scanned Qty",
+   "reqd": 1
+  },
+  {
+   "fieldname": "batch_no",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Batch No",
+   "options": "Batch"
+  },
+  {
+   "fieldname": "serial_no",
+   "fieldtype": "Small Text",
+   "label": "Serial No"
+  },
+  {
+   "fieldname": "scan_timestamp",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Scan Timestamp"
+  }
+ ],
+ "istable": 1,
+ "module": "Stock Count Management",
+ "name": "Count Scan Log",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

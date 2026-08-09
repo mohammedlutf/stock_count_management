@@ -83,10 +83,10 @@ class StockCountSession(Document):
 
     @frappe.whitelist()
     def zero_out_uncounted_and_reconcile(self, zero_out_uncounted=0):
-        """ Native ERPNext Stock Reconciliation Generator - Individual Batch Rows Mode """
+        """ Native ERPNext 15 Stock Reconciliation Generator """
         zero_out = frappe.parse_json(zero_out_uncounted)
 
-        # 1. Bulk update uncounted entries directly in SQL ONLY if zero_out is checked
+        # 1. Bulk update uncounted items directly in SQL if requested
         if zero_out:
             frappe.db.sql("""
                 UPDATE `tabCount Entry`
@@ -98,12 +98,18 @@ class StockCountSession(Document):
 
         self.recalculate_statistics()
 
-        # 2. Fetch Counted/Verified lines (if zero_out=0, Pending entries remain Pending and are ignored)
+        # 2. Fetch all Counted/Verified lines for this session
         entries = frappe.get_all(
             "Count Entry",
             filters={"session": self.name, "status": ["in", ["Counted", "Verified"]]},
             fields=["name", "item_code", "warehouse", "current_erp_qty", "qty_in_stock_uom", "batch_no", "serial_no"]
         )
+
+        # 3. Filter for entries with actual inventory variances
+        reconcile_items = [e for e in entries if flt(e.qty_in_stock_uom) != flt(e.current_erp_qty)]
+
+        if not reconcile_items:
+            frappe.throw(_("No variance detected between physical count and system stock for session {0}.").format(self.name))
 
         current_dt = now_datetime()
         posting_date = current_dt.strftime("%Y-%m-%d")
@@ -111,72 +117,102 @@ class StockCountSession(Document):
 
         items_payload = []
 
-        # 3. Expand items per batch into individual payload rows
-        for entry in entries:
-            entry_doc = frappe.get_doc("Count Entry", entry.name)
+        # 4. Construct item rows and valid non-zero batch bundles
+        for entry in reconcile_items:
             item_doc = frappe.get_cached_doc("Item", entry.item_code)
             has_batch = item_doc.has_batch_no
             has_serial = item_doc.has_serial_no
 
+            counted_qty = flt(entry.qty_in_stock_uom)
+            erp_qty = flt(entry.current_erp_qty)
+            diff_qty = counted_qty - erp_qty
+
             valuation_rate = frappe.db.get_value("Bin", {"item_code": entry.item_code, "warehouse": entry.warehouse}, "valuation_rate") or item_doc.valuation_rate or 1.0
 
-            if has_batch:
-                # Aggregate scanned quantities per batch from scan logs
+            item_row = {
+                "item_code": entry.item_code,
+                "warehouse": entry.warehouse,
+                "qty": counted_qty,
+                "valuation_rate": valuation_rate
+            }
+
+            if has_batch or has_serial:
+                is_inward = diff_qty >= 0
+
+                # Query scan logs to aggregate physical counts per batch
+                scan_logs = frappe.db.get_all(
+                    "Count Scan Log",
+                    filters={"parent": entry.name},
+                    fields=["batch_no", "qty"]
+                )
+
                 scanned_batch_map = {}
-                for log in entry_doc.scan_logs:
-                    if log.batch_no:
-                        scanned_batch_map[log.batch_no] = scanned_batch_map.get(log.batch_no, 0.0) + flt(log.qty)
+                for log in scan_logs:
+                    if log.get("batch_no"):
+                        scanned_batch_map[log["batch_no"]] = scanned_batch_map.get(log["batch_no"], 0.0) + flt(log["qty"])
 
                 if not scanned_batch_map and entry.batch_no:
-                    scanned_batch_map[entry.batch_no] = flt(entry.qty_in_stock_uom)
+                    scanned_batch_map[entry.batch_no] = counted_qty
 
-                # Determine which batches to process
-                if zero_out:
-                    # Include scanned batches PLUS all active system batches (to zero them out)
-                    all_system_batches = frappe.get_all(
-                        "Batch",
-                        filters={"item": entry.item_code, "disabled": 0,"batch_qty" : ['>', '0']},
-                        pluck="name"
-                    )
-                    batches_to_process = set(scanned_batch_map.keys()).union(set(all_system_batches))
-                else:
-                    # STRICT: Only process batches that were actually scanned or recorded on entry
-                    batches_to_process = set(scanned_batch_map.keys())
+                # FILTER OUT ZERO-QUANTITY ENTRIES for Inward bundles
+                # ERPNext 15 requires bundle entries to have strictly positive quantities (> 0)
+                valid_batch_entries = {}
+                if has_batch:
+                    for b_name, b_qty in scanned_batch_map.items():
+                        if flt(b_qty) > 0:
+                            valid_batch_entries[b_name] = flt(b_qty)
 
-                for b_name in batches_to_process:
-                    batch_target_qty = scanned_batch_map.get(b_name, 0.0)
+                            # Auto-create missing batch docs in tabBatch if needed
+                            if not frappe.db.exists("Batch", b_name):
+                                b_doc = frappe.new_doc("Batch")
+                                b_doc.batch_id = b_name
+                                b_doc.item = entry.item_code
+                                b_doc.save(ignore_permissions=True)
 
-                    # Ensure batch exists in tabBatch
-                    if not frappe.db.exists("Batch", b_name):
-                        b_doc = frappe.new_doc("Batch")
-                        b_doc.batch_id = b_name
-                        b_doc.item = entry.item_code
-                        b_doc.save(ignore_permissions=True)
+                bundle = frappe.new_doc("Serial and Batch Bundle")
+                bundle.item_code = entry.item_code
+                bundle.warehouse = entry.warehouse
+                bundle.type_of_transaction = "Inward" if is_inward else "Outward"
+                bundle.voucher_type = "Stock Reconciliation"
+                bundle.posting_date = posting_date
+                bundle.posting_time = posting_time
 
-                    items_payload.append({
-                        "item_code": entry.item_code,
-                        "warehouse": entry.warehouse,
-                        "qty": batch_target_qty,
-                        "valuation_rate": valuation_rate,
-                        "use_serial_batch_fields": 1,
-                        "batch_no": b_name
+                total_bundle_qty = sum(valid_batch_entries.values()) if valid_batch_entries else (abs(diff_qty) if not is_inward else counted_qty)
+                bundle.qty = total_bundle_qty if total_bundle_qty > 0 else 1.0
+
+                serials_list = []
+                if has_serial and entry.serial_no:
+                    serials_list = [s.strip() for s in entry.serial_no.replace('\n', ',').split(',') if s.strip()]
+
+                if serials_list:
+                    for s in serials_list:
+                        bundle.append("entries", {
+                            "serial_no": s,
+                            "batch_no": list(valid_batch_entries.keys())[0] if valid_batch_entries else None,
+                            "qty": 1.0
+                        })
+                elif has_batch and valid_batch_entries:
+                    for b_no, b_qty in valid_batch_entries.items():
+                        bundle.append("entries", {
+                            "batch_no": b_no,
+                            "qty": b_qty
+                        })
+                elif has_batch and not valid_batch_entries and entry.batch_no:
+                    # Outward fallback for zeroing out batch
+                    bundle.append("entries", {
+                        "batch_no": entry.batch_no,
+                        "qty": bundle.qty
                     })
 
-            else:
-                # Non-batched items
-                items_payload.append({
-                    "item_code": entry.item_code,
-                    "warehouse": entry.warehouse,
-                    "qty": flt(entry.qty_in_stock_uom),
-                    "valuation_rate": valuation_rate,
-                    "serial_no": entry.serial_no if has_serial else None
-                })
+                bundle.flags.ignore_mandatory = True
+                bundle.flags.ignore_validate = True
+                bundle.save(ignore_permissions=True)
 
-        if not items_payload:
-            frappe.throw(_("No variance or scanned items found for reconciliation in session {0}.").format(self.name))
-        print("////////////////////")
-        print(items_payload)
-        # 4. Create Stock Reconciliation with use_serial_batch_fields = 1
+                item_row["serial_and_batch_bundle"] = bundle.name
+
+            items_payload.append(item_row)
+
+        # 5. Create native Stock Reconciliation document
         recon = frappe.get_doc({
             "doctype": "Stock Reconciliation",
             "company": self.company,

@@ -20,8 +20,8 @@
         </div>
     </div>
 
-    <!-- Multi-Search Input (Barcode / Code / Name) -->
-    <div class="card p-3 mb-3 shadow-sm">
+    <!-- Multi-Search Input (Barcode / Code / Name) & Substring Dropdown Container -->
+    <div class="card p-3 mb-3 shadow-sm position-relative">
         <div class="input-group input-group-lg mb-2">
             <input
                 type="text"
@@ -37,6 +37,13 @@
                 </button>
             </div>
         </div>
+
+        <!-- Dynamic Live Search Dropdown Container -->
+        <div 
+            id="search-dropdown" 
+            class="dropdown-menu w-100 shadow-lg border mt-1" 
+            style="display: none; position: absolute; top: 70px; left: 0; z-index: 1050; max-height: 280px; overflow-y: auto;"
+        ></div>
 
         <button id="btn-camera-toggle" class="btn btn-outline-info btn-block font-weight-bold">
             📷 {{__("Open Camera Scanner")}}
@@ -69,7 +76,7 @@
 
         <hr class="my-2">
 
-        <!-- Dynamic Batch Tracking Input -->
+        <!-- Dynamic Batch Tracking Input & Expiry Badge -->
         <div id="batch-section" class="form-group d-none">
             <label class="font-weight-bold text-warning">{{__("Batch Number")}}</label>
             <select id="batch-select" class="form-control form-control-lg"></select>
@@ -80,6 +87,9 @@
                 class="form-control mt-1 d-none"
                 placeholder="{{__("Enter Batch Number Manually")}}"
             >
+
+            <!-- Real-Time Batch Expiry Alert Badge -->
+            <div id="batch-warning-badge" class="mt-1" style="display: none;"></div>
         </div>
 
         <!-- Dynamic Serial Tracking Input -->
