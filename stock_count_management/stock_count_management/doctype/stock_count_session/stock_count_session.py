@@ -6,7 +6,7 @@ from frappe.utils import flt, now_datetime, get_link_to_form
 class StockCountSession(Document):
 
     @frappe.whitelist()
-    def generate_tasks(self):
+    def generate_tasks(self, get_all_items=0):
         """ Pulls active stock balances for the warehouse and creates Count Entries """
         if self.status != "Draft":
             frappe.throw(_("Tasks can only be generated when Session is in Draft status."))
@@ -14,37 +14,75 @@ class StockCountSession(Document):
         # Clear previous pending entries if regenerating tasks
         frappe.db.delete("Count Entry", {"session": self.name})
 
-        # Fetch active Bins for the warehouse
-        bins = frappe.db.get_all(
-            "Bin",
-            filters={"warehouse": self.warehouse},
-            fields=["item_code", "actual_qty"]
-        )
-
-        if not bins:
-            frappe.throw(_("No inventory records found for warehouse {0}").format(self.warehouse))
-
         entries_to_insert = []
-        for b in bins:
-            item_uom = frappe.db.get_value("Item", b.item_code, "stock_uom")
-            item_name = frappe.db.get_value("Item", b.item_code, "item_name")
-            
-            entries_to_insert.append((
-                frappe.generate_hash(length=10),
-                self.name,
-                b.item_code,
-                item_name,
-                self.warehouse,
-                item_uom,
-                b.actual_qty,
-                0.0,
-                (0.0 - flt(b.actual_qty)),
-                "Pending",
-                frappe.session.user,
-                now_datetime(),
-                now_datetime(),
-                frappe.session.user
-            ))
+
+        if frappe.parse_json(get_all_items):
+            bitems = frappe.db.sql("""
+                SELECT
+                    i.item_code,
+                    i.item_name,
+                    i.stock_uom,
+                    COALESCE(b.actual_qty, 0) AS actual_qty
+                FROM `tabItem` i
+                LEFT JOIN `tabBin` b
+                    ON b.item_code = i.item_code
+                    AND b.warehouse = %(warehouse)s
+                WHERE i.is_stock_item = 1
+                ORDER BY i.item_code
+            """, {
+                "warehouse": self.warehouse
+            }, as_dict=True)
+
+            if not bitems:
+                frappe.throw(_("No inventory records found for warehouse {0}").format(self.warehouse))
+            for b in bitems:
+                entries_to_insert.append((
+                    frappe.generate_hash(length=10),
+                    self.name,
+                    b.item_code,
+                    b.item_name,
+                    self.warehouse,
+                    b.item_uom,
+                    b.actual_qty,
+                    0.0,
+                    (0.0 - flt(b.actual_qty)),
+                    "Pending",
+                    frappe.session.user,
+                    now_datetime(),
+                    now_datetime(),
+                    frappe.session.user
+                ))
+        
+        else:
+            # Fetch active Bins for the warehouse
+            bins = frappe.db.get_all(
+                "Bin",
+                filters={"warehouse": self.warehouse},
+                fields=["item_code", "actual_qty"]
+            )
+
+            if not bins:
+                frappe.throw(_("No inventory records found for warehouse {0}").format(self.warehouse))
+            for b in bins:
+                item_uom = frappe.db.get_value("Item", b.item_code, "stock_uom")
+                item_name = frappe.db.get_value("Item", b.item_code, "item_name")
+        
+                entries_to_insert.append((
+                    frappe.generate_hash(length=10),
+                    self.name,
+                    b.item_code,
+                    item_name,
+                    self.warehouse,
+                    item_uom,
+                    b.actual_qty,
+                    0.0,
+                    (0.0 - flt(b.actual_qty)),
+                    "Pending",
+                    frappe.session.user,
+                    now_datetime(),
+                    now_datetime(),
+                    frappe.session.user
+                ))
 
         frappe.db.bulk_insert(
             "Count Entry",
@@ -174,8 +212,7 @@ class StockCountSession(Document):
 
         if not items_payload:
             frappe.throw(_("No variance or scanned items found for reconciliation in session {0}.").format(self.name))
-        print("////////////////////")
-        print(items_payload)
+       
         # 4. Create Stock Reconciliation with use_serial_batch_fields = 1
         recon = frappe.get_doc({
             "doctype": "Stock Reconciliation",
@@ -206,6 +243,18 @@ class StockCountSession(Document):
         entry_doc = frappe.get_doc("Count Entry", entry_name)
         converted_qty = flt(qty) * flt(conversion_factor or 1.0)
 
+        has_batch_no, has_serial_no = frappe.db.get_value(
+            "Item",
+            item_code,
+            ["has_batch_no", "has_serial_no"]
+        )
+        
+        if  has_batch_no and batch_no == "":
+            frappe.throw(_("Please Select or create a batch"))
+        if not has_batch_no:  
+            batch_no=None
+
+
         entry_doc.append("scan_logs", {
             "counter": frappe.session.user,
             "qty": converted_qty,
@@ -219,14 +268,14 @@ class StockCountSession(Document):
         entry_doc.difference_quantity = total_qty - flt(entry_doc.current_erp_qty)
         entry_doc.status = "Counted"
 
-        if batch_no:
-            entry_doc.batch_no = batch_no
+        # if batch_no:
+        #     entry_doc.batch_no = batch_no
 
-        if serial_no:
-            existing_serials = set([s.strip() for s in (entry_doc.serial_no or "").split("\n") if s.strip()])
-            new_serials = [s.strip() for s in serial_no.replace(",", "\n").split("\n") if s.strip()]
-            existing_serials.update(new_serials)
-            entry_doc.serial_no = "\n".join(sorted(existing_serials))
+        # if serial_no:
+        #     existing_serials = set([s.strip() for s in (entry_doc.serial_no or "").split("\n") if s.strip()])
+        #     new_serials = [s.strip() for s in serial_no.replace(",", "\n").split("\n") if s.strip()]
+        #     existing_serials.update(new_serials)
+        #     entry_doc.serial_no = "\n".join(sorted(existing_serials))
 
         entry_doc.save(ignore_permissions=True)
         self.recalculate_statistics()

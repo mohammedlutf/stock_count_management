@@ -23,7 +23,7 @@ def scan_and_fetch_item(search_query, warehouse, session):
     if barcode_doc:
         item_code = barcode_doc.parent
         scanned_uom = barcode_doc.uom
-
+    
     # 2. Check Item Code directly
     if not item_code and frappe.db.exists("Item", search_query):
         item_code = search_query
@@ -44,7 +44,6 @@ def scan_and_fetch_item(search_query, warehouse, session):
             uom_list.append({"uom": u_row.uom, "conversion_factor": u_row.conversion_factor})
 
     auto_uom = scanned_uom if scanned_uom else item.stock_uom
-
     # Fetch existing count entry details
     entry_name = frappe.db.get_value("Count Entry", {"session": session, "item_code": item_code, "warehouse": warehouse})
     
@@ -92,6 +91,9 @@ def submit_count_payload(session, warehouse, item_code, selected_uom, conversion
 
     # Load session document
     session_doc = frappe.get_doc("Stock Count Session", session)
+
+    if session_doc.status == "Completed":
+        frappe.throw(_("Session ID is complated."))
 
     # Route scan payload to session instance method
     res = session_doc.record_counter_scan(

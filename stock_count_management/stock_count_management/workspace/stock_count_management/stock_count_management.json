@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"271PDn3NKC\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Stock Count Operations</span>\",\"col\":12}},{\"id\":\"b3pp6zbfYt\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Stock Count Session\",\"col\":3}},{\"id\":\"en315huaX2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Count Entry\",\"col\":3}},{\"id\":\"KOm1nK0C42\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Variance Investigation\",\"col\":3}},{\"id\":\"QETbceFPEI\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Stock Reconciliation\",\"col\":3}},{\"id\":\"I5PZTirU5o\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"DOv2l6YdA5\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Reports &amp; Analytics</span>\",\"col\":12}},{\"id\":\"yXDR6hnSby\",\"type\":\"card\",\"data\":{\"card_name\":\"Stock Count Management Reports\",\"col\":4}},{\"id\":\"Ka2Wp6Vqgp\",\"type\":\"card\",\"data\":{\"card_name\":\"Stock Reconciliation Report\",\"col\":4}}]",
+ "content": "[{\"id\":\"271PDn3NKC\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Stock Count Operations</span>\",\"col\":12}},{\"id\":\"b3pp6zbfYt\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Stock Count Session\",\"col\":3}},{\"id\":\"BFChBAb1_s\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Mobile Scanner\",\"col\":3}},{\"id\":\"en315huaX2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Count Entry\",\"col\":3}},{\"id\":\"KOm1nK0C42\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Variance Investigation\",\"col\":3}},{\"id\":\"QETbceFPEI\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Stock Reconciliation\",\"col\":3}},{\"id\":\"I5PZTirU5o\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"DOv2l6YdA5\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Reports &amp; Analytics</span>\",\"col\":12}},{\"id\":\"yXDR6hnSby\",\"type\":\"card\",\"data\":{\"card_name\":\"Stock Count Management Reports\",\"col\":4}},{\"id\":\"Ka2Wp6Vqgp\",\"type\":\"card\",\"data\":{\"card_name\":\"Stock Reconciliation Report\",\"col\":4}}]",
  "creation": "2026-08-03 12:00:00",
  "custom_blocks": [],
  "docstatus": 0,
@@ -177,7 +177,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-08-09 19:28:51.426120",
+ "modified": "2026-08-09 19:36:52.151191",
  "modified_by": "Administrator",
  "module": "Stock Count Management",
  "name": "Stock Count Management",
@@ -189,6 +189,13 @@
  "roles": [],
  "sequence_id": 1.0,
  "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Mobile Scanner",
+   "link_to": "mobile-scanner",
+   "type": "Page"
+  },
   {
    "color": "Grey",
    "doc_view": "List",

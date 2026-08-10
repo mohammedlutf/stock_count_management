@@ -180,7 +180,7 @@ frappe.pages['mobile-scanner'].on_page_load = function(wrapper) {
             let html = `
                 <div class="dropdown-item p-2 border-bottom search-result-row" style="cursor:pointer;" data-item='${JSON.stringify(item)}'>
                     <div class="fw-bold text-primary">${item.item_name} ${barcode_tag}</div>
-                    <div class="small text-muted">${__("Code")}: ${item.item_code} | ${__("Stock UOM")}: ${item.stock_uom}</div>
+                    <div class="small text-muted">${__("Code")}: ${item.item_code} | ${__("Stock UOM")}: ${item.stock_uom} </div>
                 </div>
             `;
             $dropdown.append(html);
@@ -357,6 +357,7 @@ frappe.pages['mobile-scanner'].on_page_load = function(wrapper) {
         current_item = null;
         $('#scanned-item-card').addClass('d-none');
         $('#search-dropdown').hide().empty();
+        $('#batch-select').empty();
         $('#batch-warning-badge').hide().empty();
         $('#barcode-input').val('').focus();
     }
