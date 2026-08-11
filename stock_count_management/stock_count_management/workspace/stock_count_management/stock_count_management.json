@@ -151,7 +151,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Stock Reconciliation Report",
-   "link_count": 2,
+   "link_count": 3,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
@@ -175,9 +175,19 @@
    "link_type": "Report",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Uncounted Items",
+   "link_count": 0,
+   "link_to": "Uncounted Items",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-08-09 19:36:52.151191",
+ "modified": "2026-08-11 17:26:36.013264",
  "modified_by": "Administrator",
  "module": "Stock Count Management",
  "name": "Stock Count Management",
